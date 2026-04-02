@@ -4,6 +4,7 @@ package com.mst.claudecamerax
 import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.icu.lang.UCharacter
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -20,6 +21,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -103,7 +106,7 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mi App de Fotos") },
+                title = { Text("Mis Fotos") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -119,7 +122,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Captura tu foto",
+                text = "Nombre para la foto",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -129,10 +132,12 @@ fun HomeScreen(
             OutlinedTextField(
                 value = photoName,
                 onValueChange = onPhotoNameChange,
-                label = { Text("Nombre de la foto") },
-                placeholder = { Text("Ej: Vacaciones2024") },
+                label = { Text("") },
+                placeholder = { Text("Ej: 12557") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+
             )
 
             Text(
@@ -272,7 +277,7 @@ fun CameraScreen(
                         val contentValues = ContentValues().apply {
                             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
                             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-                            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/MisCapturas")
+                            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/MiRecorrido")
                         }
 
                         val outputOptions = ImageCapture.OutputFileOptions
