@@ -44,21 +44,20 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
+import com.mst.claudecamerax.model.Flash
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraScreen(
-    photoName: String,
-    shotLabel: String,
-    onPhotoTaken: (Uri) -> Unit,
-    onBack: () -> Unit
+    photoName     : String,
+    shotIndex     : Int,
+    flashMode     : Flash,          // ← nuevo
+    onFlashToggle : () -> Unit,         // ← nuevo
+    onPhotoTaken  : (Uri) -> Unit,
+    onBack        : () -> Unit
 ) {
-    val context = LocalContext.current
+    val context        = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var hasCameraPermission by remember {
@@ -106,13 +105,27 @@ fun CameraScreen(
         }
     }
 
+    // Actualiza el flash mode en imageCapture cada vez que cambia
+    LaunchedEffect(flashMode) {
+        imageCapture?.flashMode = flashMode.cameraxValue
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Foto $shotLabel") },
+                title = { Text("Foto #$shotIndex") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Text("←", style = MaterialTheme.typography.headlineMedium)
+                    }
+                },
+                // ── Botón de flash en la barra superior ──────────────────────
+                actions = {
+                    IconButton(onClick = onFlashToggle) {
+                        Text(
+                            text  = flashMode.icon,
+                            style = MaterialTheme.typography.titleMedium
+                        )
                     }
                 }
             )
@@ -126,30 +139,55 @@ fun CameraScreen(
             AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
             Column(
-                modifier = Modifier
+                modifier            = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Chip de nombre de archivo
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
                     shape = MaterialTheme.shapes.medium
                 ) {
                     Text(
-                        text = "Guardando como: $photoName",
+                        text     = "Guardando como: $photoName",
                         modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodyMedium
+                        style    = MaterialTheme.typography.bodyMedium
                     )
                 }
 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Chip del estado de flash (tappable para cambiar)
+//                Surface(
+//                    color    = when (flashMode) {
+//                        Flash.OFF  -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+//                        Flash.ON   -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.9f)
+//                        Flash.AUTO -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
+//                    },
+//                    shape    = MaterialTheme.shapes.medium,
+//                    onClick  = onFlashToggle          // también tappable desde acá
+//                ) {
+//                    Text(
+//                        text     = flashMode.label,
+//                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+//                        style    = MaterialTheme.typography.bodySmall
+//                    )
+//                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Botón de captura
                 Button(
-                    onClick = { capturePhoto(context, photoName, imageCapture, onPhotoTaken) },
+                    onClick  = {
+                        // Aplica el flash mode justo antes de disparar
+                        imageCapture?.flashMode = flashMode.cameraxValue
+                        capturePhoto(context, photoName, imageCapture, onPhotoTaken)
+                    },
                     modifier = Modifier.size(80.dp),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    colors = ButtonDefaults.buttonColors(
+                    shape    = MaterialTheme.shapes.extraLarge,
+                    colors   = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
@@ -160,13 +198,13 @@ fun CameraScreen(
     }
 }
 
-
+// ─── Función de captura ───────────────────────────────────────────────────────
 
 private fun capturePhoto(
-    context: android.content.Context,
-    photoName: String,
-    imageCapture: ImageCapture?,
-    onPhotoTaken: (Uri) -> Unit
+    context      : android.content.Context,
+    photoName    : String,
+    imageCapture : ImageCapture?,
+    onPhotoTaken : (Uri) -> Unit
 ) {
     val contentValues = ContentValues().apply {
         put(MediaStore.MediaColumns.DISPLAY_NAME, photoName)

@@ -7,10 +7,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -23,25 +26,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.mst.claudecamerax.model.RepeatConfig
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreviewScreen(
-    imageUri: Uri?,
-    photoName: String,
-    repeatConfig: RepeatConfig,
-    onDiscard: () -> Unit,
-    onSave: () -> Unit
+    imageUri  : Uri?,
+    photoName : String,
+    shotIndex : Int,
+    onDiscard : () -> Unit,
+    onNext    : () -> Unit,
+    onFinish  : () -> Unit
 ) {
     val context = LocalContext.current
-    val isLastShot = repeatConfig.currentIndex == repeatConfig.totalShots
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Vista Previa — Foto ${repeatConfig.currentIndex} / ${repeatConfig.totalShots}") }
+                title = { Text("Vista Previa — Foto #$shotIndex") }
             )
         }
     ) { padding ->
@@ -50,6 +52,7 @@ fun PreviewScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Imagen ocupa todo el espacio disponible
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -57,37 +60,33 @@ fun PreviewScreen(
             ) {
                 imageUri?.let { uri ->
                     Image(
-                        painter = rememberAsyncImagePainter(uri),
+                        painter            = rememberAsyncImagePainter(uri),
                         contentDescription = "Foto capturada",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
+                        modifier           = Modifier.fillMaxSize(),
+                        contentScale       = ContentScale.Fit
                     )
                 }
             }
 
+            // Panel inferior
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "Nombre: $photoName",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Text(
-                    text = if (isLastShot) "Última foto de la serie" else "Siguiente: ${repeatConfig.currentIndex + 1} / ${repeatConfig.totalShots}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text     = "Nombre: $photoName",
+                    style    = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
+                // Fila 1: Descartar | Guardar y continuar
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier            = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedButton(
-                        onClick = {
+                        onClick  = {
                             imageUri?.let { uri ->
                                 context.contentResolver.delete(uri, null, null)
                             }
@@ -96,19 +95,34 @@ fun PreviewScreen(
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Descartar serie")
+                        Text("Reintentar")
                     }
 
                     Button(
-                        onClick = {
-                            val msg = if (isLastShot) "Serie completa guardada" else "Foto guardada — siguiente toma"
-                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                            onSave()
+                        onClick  = {
+                            Toast.makeText(context, "Foto guardada — siguiente toma", Toast.LENGTH_SHORT).show()
+                            onNext()
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(if (isLastShot) "Guardar y terminar" else "Guardar y continuar")
+                        Text("Guardar")
                     }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Fila 2: Finalizar serie (ancho completo)
+                Button(
+                    onClick  = {
+                        Toast.makeText(context, "Serie finalizada", Toast.LENGTH_SHORT).show()
+                        onFinish()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors   = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text("Finalizar serie")
                 }
             }
         }

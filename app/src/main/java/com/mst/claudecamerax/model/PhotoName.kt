@@ -5,9 +5,8 @@ import java.util.Date
 import java.util.Locale
 
 object PhotoName {
-
-    fun build(base: String, index: Int, total: Int): String {
-        val suffix = if (total > 1) "_$index" else ""
+    fun build(base: String, index: Int): String {
+        val suffix = "_$index"
         return if (base.isNotEmpty()) {
             "$base$suffix"
         } else {
